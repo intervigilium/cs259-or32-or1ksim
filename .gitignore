@@ -2,3 +2,9 @@
 .cvsignore
 .deps
 tags
+Makefile
+libtool
+config.h
+config.log
+config.status
+autom4te.cache
