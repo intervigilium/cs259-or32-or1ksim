@@ -8,6 +8,8 @@ config.h
 config.log
 config.status
 autom4te.cache
+stamp-vti
+version.texi
 *.o
 *.lo
 *.la
