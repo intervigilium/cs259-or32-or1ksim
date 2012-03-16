@@ -8,3 +8,7 @@ config.h
 config.log
 config.status
 autom4te.cache
+*.o
+*.lo
+*.la
+.libs
