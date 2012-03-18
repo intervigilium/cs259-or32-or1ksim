@@ -144,6 +144,7 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
   struct insn_op_struct *opd = or1ksim_op_start[insn_index];
   int i;
   int num_ops;
+  int num_operands; /* redundant, but num_ops is wiped at points in function */
   int nbits = 0;
   int set_param = 0;
   int dis = 0;
@@ -152,6 +153,7 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
 
   write_to_reg = 0;
 
+  shift_fprintf (level, fo, "int is_disabled_reg = 0;\n");
   shift_fprintf (level, fo, "uorreg_t ");
 
   /* Count number of operands */
@@ -167,6 +169,7 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
     if (opd[i].type & OPTYPE_LAST)
       break;
   }
+  num_operands = num_ops;
 
   fprintf (fo, ";\n");
 
@@ -240,7 +243,21 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
     i++;
   } while (1);
 
+  /* check referenced registers to see if they are disabled */
+  for (i = 0; i < num_operands; i++) {
+    shift_fprintf (level++, fo, "if (cpu_state.disable_regs[%c]) {\n", 'a' + i);
+    shift_fprintf (level, fo, "is_disabled_reg = 1;\n");
+    shift_fprintf (--level, fo, "}\n");
+  }
+  shift_fprintf(level, fo, "if (!is_disabled_reg) {\n");
+
+  /* output actual instruction functionality */
   output_function (fo, or1ksim_or32_opcodes[insn_index].function_name, level);
+
+  /* throw exception if disabled register was used */
+  shift_fprintf (level++, fo, "} else {\n");
+  shift_fprintf (level, fo, "except_handle (EXCEPT_ILLEGAL, cpu_state.pc);\n");
+  shift_fprintf (--level, fo, "}\n");
 
   if (set_param)
     {
@@ -475,4 +492,3 @@ int main (int argc, char *argv[])
   or1ksim_destruct_automata ();
   return 0;
 }
-
