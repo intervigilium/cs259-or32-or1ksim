@@ -47,7 +47,6 @@
 struct cpu_state {
   uorreg_t             reg[MAX_GPRS];	/*!< General purpose registers */
   uorreg_t             sprs[MAX_SPRS];	/*!< Special purpose registers */
-  int                  disable_regs[MAX_GPRS];/*!< Disabled registers */
   oraddr_t             insn_ea;		/*!< EA of instrs that have an EA */
   int                  delay_insn;	/*!< Is current instr in delay slot */
   int                  npc_not_valid;	/*!< NPC updated while stalled */

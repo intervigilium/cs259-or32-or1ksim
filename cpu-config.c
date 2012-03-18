@@ -212,6 +212,29 @@ cpu_hardfloat (union param_val val, void *dat)
 {
   config.cpu.hardfloat = val.int_val;
 }
+
+static void
+cpu_disable_regs (union param_val val, void *dat)
+{
+  config.cpu.disable_regs = val.int_val;
+
+  if (config.cpu.disable_regs & 0x001) {
+    config.cpu.disable_regs &= (~0x001);
+    WARNING ("unable to disable zero register r0.");
+  }
+  if (config.cpu.disable_regs & 0x002) {
+    config.cpu.disable_regs &= (~0x002);
+    WARNING ("unable to disable stack pointer r1.");
+  }
+  if (config.cpu.disable_regs & 0x200) {
+    config.cpu.disable_regs &= (~0x200);
+    WARNING ("unable to disable link pointer r9.");
+  }
+  if (config.cpu.disable_regs & 0x400) {
+    config.cpu.disable_regs &= (~0x400);
+    WARNING ("unable to disable linux thread register r10.");
+  }
+}
 /*---------------------------------------------------------------------------*/
 /*!Register the functions to handle a section cpu
 
@@ -237,5 +260,6 @@ reg_cpu_sec ()
   reg_config_param (sec, "dependstats", PARAMT_INT, cpu_dependstats);
   reg_config_param (sec, "sbuf_len",    PARAMT_INT, cpu_sbuf_len);
   reg_config_param (sec, "hardfloat",   PARAMT_INT, cpu_hardfloat);
+  reg_config_param (sec, "disable_regs",PARAMT_INT, cpu_disable_regs);
 
 }	/* reg_cpu_sec() */

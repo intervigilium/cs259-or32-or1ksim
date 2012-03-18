@@ -245,7 +245,8 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
 
   /* check referenced registers to see if they are disabled */
   for (i = 0; i < num_ops; i++) {
-    shift_fprintf (level++, fo, "if (cpu_state.disable_regs[%c]) {\n", 'a' + i);
+    shift_fprintf (level++, fo,
+                   "if (config.cpu.disable_regs & (1 << %c)) {\n", 'a' + i);
     shift_fprintf (level, fo, "is_disabled_reg = 1;\n");
     shift_fprintf (--level, fo, "}\n");
   }
