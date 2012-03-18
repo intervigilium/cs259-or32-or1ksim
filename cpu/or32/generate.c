@@ -143,8 +143,8 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
 {
   struct insn_op_struct *opd = or1ksim_op_start[insn_index];
   int i;
+  int op_idx;
   int num_ops;
-  int num_operands; /* redundant, but num_ops is wiped at points in function */
   int nbits = 0;
   int set_param = 0;
   int dis = 0;
@@ -157,26 +157,26 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
   shift_fprintf (level, fo, "uorreg_t ");
 
   /* Count number of operands */
-  for (i = 0, num_ops = 0;; i++) {
+  for (i = 0, op_idx = 0;; i++) {
     if (!(opd[i].type & OPTYPE_OP))
       continue;
     if (opd[i].type & OPTYPE_DIS)
       continue;
-    if (num_ops)
+    if (op_idx)
       fprintf(fo, ", ");
-    fprintf(fo, "%c", 'a' + num_ops);
-    num_ops++;
+    fprintf(fo, "%c", 'a' + op_idx);
+    op_idx++;
     if (opd[i].type & OPTYPE_LAST)
       break;
   }
-  num_operands = num_ops;
+  num_ops = op_idx;
 
   fprintf (fo, ";\n");
 
-  shift_fprintf (level, fo, "/* Number of operands: %i */\n", num_ops);
+  shift_fprintf (level, fo, "/* Number of operands: %i */\n", op_idx);
 
   i = 0;
-  num_ops = 0;
+  op_idx = 0;
   do {
 /*
     printf("opd[%i].type<last> = %c\n", i, opd->type & OPTYPE_LAST ? '1' : '0');    printf("opd[%i].type<op> = %c\n", i, opd->type & OPTYPE_OP ? '1' : '0');
@@ -189,11 +189,11 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
 */
 
     if (!nbits)
-      shift_fprintf (level, fo, "%c = (insn >> %i) & 0x%x;\n", 'a' + num_ops,
+      shift_fprintf (level, fo, "%c = (insn >> %i) & 0x%x;\n", 'a' + op_idx,
                      opd->type & OPTYPE_SHR, (1 << opd->data) - 1);
     else
       shift_fprintf (level, fo, "%c |= ((insn >> %i) & 0x%x) << %i;\n",
-                     'a' + num_ops, opd->type & OPTYPE_SHR,
+                     'a' + op_idx, opd->type & OPTYPE_SHR,
                      (1 << opd->data) - 1, nbits);
 
     nbits += opd->data;
@@ -202,21 +202,21 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
       sbit = (opd->type & OPTYPE_SBIT) >> OPTYPE_SBIT_SHR;
       if (opd->type & OPTYPE_SIG)
         shift_fprintf (level, fo, "if(%c & 0x%08x) %c |= 0x%x;\n",
-                       'a' + num_ops, 1 << sbit, 'a' + num_ops,
+                       'a' + op_idx, 1 << sbit, 'a' + op_idx,
                        0xffffffff << sbit);
       opd++;
       shift_fprintf (level, fo, "*(orreg_t *)&%c += (orreg_t)cpu_state.reg[(insn >> %i) & 0x%x];\n",
-                     'a' + num_ops, opd->type & OPTYPE_SHR,
+                     'a' + op_idx, opd->type & OPTYPE_SHR,
                      (1 << opd->data) - 1);
       dis = 1;
-      dis_op = num_ops;
+      dis_op = op_idx;
     }
 
     if (opd->type & OPTYPE_OP) {
       sbit = (opd->type & OPTYPE_SBIT) >> OPTYPE_SBIT_SHR;
       if (opd->type & OPTYPE_SIG)
         shift_fprintf (level, fo, "if(%c & 0x%08x) %c |= 0x%x;\n",
-                       'a' + num_ops, 1 << sbit, 'a' + num_ops,
+                       'a' + op_idx, 1 << sbit, 'a' + op_idx,
                        0xffffffff << sbit);
       if ((opd->type & OPTYPE_REG) && !dis) {
         if(!i) {
@@ -224,15 +224,15 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
           shift_fprintf (level, fo, "#define REG_PARAM0  a\n");
           set_param = 1;
         }
-        shift_fprintf (level, fo, "#define PARAM%i cpu_state.reg[%c]\n", num_ops,
-                      'a' + num_ops);
+        shift_fprintf (level, fo, "#define PARAM%i cpu_state.reg[%c]\n", op_idx,
+                      'a' + op_idx);
         if(opd->type & OPTYPE_DST)
           write_to_reg = 1;
       } else {
-        shift_fprintf (level, fo, "#define PARAM%i %c\n", num_ops,
-                       'a' + num_ops);
+        shift_fprintf (level, fo, "#define PARAM%i %c\n", op_idx,
+                       'a' + op_idx);
       }
-      num_ops++;
+      op_idx++;
       nbits = 0;
       dis = 0;
     }
@@ -244,7 +244,7 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
   } while (1);
 
   /* check referenced registers to see if they are disabled */
-  for (i = 0; i < num_operands; i++) {
+  for (i = 0; i < num_ops; i++) {
     shift_fprintf (level++, fo, "if (cpu_state.disable_regs[%c]) {\n", 'a' + i);
     shift_fprintf (level, fo, "is_disabled_reg = 1;\n");
     shift_fprintf (--level, fo, "}\n");
@@ -265,7 +265,7 @@ gen_eval_operands (FILE *fo, int insn_index, int level)
       shift_fprintf (level, fo, "#undef REG_PARAM0\n");
     }
 
-  for (i = 0; i < num_ops; i++)
+  for (i = 0; i < op_idx; i++)
     shift_fprintf (level, fo, "#undef PARAM%i\n", i);
 
   return dis_op;
