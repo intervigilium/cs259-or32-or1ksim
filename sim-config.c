@@ -313,6 +313,7 @@ init_defconfig ()
   config.cpu.sbuf_len         = 0;
   config.cpu.hardfloat        = 0;
   config.cpu.disable_regs     = 0;
+  config.cpu.puf_key          = 0;
 
   /* Data cache (IC is set dynamically). Also set relevant SPR bits */
   config.dc.enabled         = 0;

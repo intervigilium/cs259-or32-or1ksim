@@ -235,6 +235,12 @@ cpu_disable_regs (union param_val val, void *dat)
     WARNING ("unable to disable linux thread register r10.");
   }
 }
+
+static void
+cpu_puf_key (union param_val val, void *dat)
+{
+  config.cpu.puf_key = val.int_val;
+}
 /*---------------------------------------------------------------------------*/
 /*!Register the functions to handle a section cpu
 
@@ -261,5 +267,6 @@ reg_cpu_sec ()
   reg_config_param (sec, "sbuf_len",    PARAMT_INT, cpu_sbuf_len);
   reg_config_param (sec, "hardfloat",   PARAMT_INT, cpu_hardfloat);
   reg_config_param (sec, "disable_regs",PARAMT_INT, cpu_disable_regs);
+  reg_config_param (sec, "puf_key",     PARAMT_INT, cpu_puf_key);
 
 }	/* reg_cpu_sec() */

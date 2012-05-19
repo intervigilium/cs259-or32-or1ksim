@@ -124,6 +124,7 @@ struct config
     int sbuf_len;		/* length of store buffer, 0=disabled */
     int hardfloat;      /* whether hardfloat is enabled */
     int disable_regs;          /* disabled register bitvector, 0=all enabled */
+    int puf_key;		/* PUF key isns are encrypted with, 0=off */
   } cpu;
 
   struct
