@@ -522,6 +522,21 @@ CONST struct or32_opcode or1ksim_or32_opcodes[] = {
   {"l.sfles", "rA,rB", "11 0x9  01101 AAAAA BBBB B--- ---- ----",
    EF (l_sfles), OR32_W_FLAG, it_compare},
 
+  {"l.addx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x0",
+   EF (l_addx), OR32_W_FLAG, it_arith},
+  {"l.subx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x1",
+   EF (l_subx), OR32_W_FLAG, it_arith},
+  {"l.mulx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x2",
+   EF (l_mulx), OR32_W_FLAG, it_arith},
+  {"l.divx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x3",
+   EF (l_divx), OR32_W_FLAG, it_arith},
+
+  {"l.addix", "rD,rA,I", "11 0xC  DDDDD AAAAA IIII IIII IIII IIII",
+   EF (l_addix), OR32_W_FLAG, it_arith},
+  {"l.mulix", "rD,rA,I", "11 0xD  DDDDD AAAAA IIII IIII IIII IIII",
+   EF (l_mulix), OR32_W_FLAG, it_arith},
+
+/*
   {"l.cust5", "rD,rA,rB,L,K", "11 0xC  DDDDD AAAAA BBBB BLLL LLLK KKKK", EFI,
    0, it_unknown},
   {"l.cust6", "", "11 0xD  ----- ----- ---- ---- ---- ----", EFI,
@@ -530,6 +545,7 @@ CONST struct or32_opcode or1ksim_or32_opcodes[] = {
    0, it_unknown},
   {"l.cust8", "", "11 0xF  ----- ----- ---- ---- ---- ----", EFI,
    0, it_unknown},
+*/
 
 /* This section should not be defined in or1ksim, since it contains duplicates,
    which would cause machine builder to complain.  */

@@ -932,7 +932,348 @@ INSTRUCTION (lf_sub_s) {
   float_set_flags();
   } else l_invalid();
 }
+INSTRUCTION (l_addx) {
+  orreg_t temp1, temp2, temp3;
+  int8_t temp4;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
 
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+
+  temp2 = (orreg_t)PARAM2;
+  temp3 = (orreg_t)PARAM1;
+  temp1 = temp2 + temp3;
+  SET_PARAM0 (temp1);
+
+  /* Set overflow if two negative values gave a positive sum, or if two
+     positive values gave a negative sum. Otherwise clear it */
+  if ((((long int) temp2 <  0) &&
+       ((long int) temp3 <  0) &&
+       ((long int) temp1 >= 0)) ||
+      (((long int) temp2 >= 0) &&
+       ((long int) temp3 >= 0) &&
+       ((long int) temp1 <  0)))
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_OV;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV;
+    }
+
+  /* Set the carry flag if (as unsigned values) the result is smaller than
+     either operand (if it smaller than one, it will be smaller than both, so
+     we need only test one). */
+  if ((uorreg_t) temp1 < (uorreg_t) temp2)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_OV)  == SPR_SR_OV))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+
+  temp4 = temp1;
+  if (temp4 == temp1)
+    or1k_mstats.byteadd++;
+
+}
+INSTRUCTION (l_subx) {
+  orreg_t temp1, temp2, temp3;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+
+  temp3 = (orreg_t)PARAM2;
+  temp2 = (orreg_t)PARAM1;
+  temp1 = temp2 - temp3;
+  SET_PARAM0 (temp1);
+
+  /* Set overflow if a negative value minus a positive value gave a positive
+     sum, or if a positive value minus a negative value gave a negative
+     sum. Otherwise clear it */
+  if ((((long int) temp2 <  0) &&
+       ((long int) temp3 >= 0) &&
+       ((long int) temp1 >= 0)) ||
+      (((long int) temp2 >= 0) &&
+       ((long int) temp3 <  0) &&
+       ((long int) temp1 <  0)))
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_OV;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV;
+    }
+
+  /* Set the carry flag if (as unsigned values) the second operand is greater
+     than the first. */
+  if ((uorreg_t) temp3 > (uorreg_t) temp2)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_OV)  == SPR_SR_OV))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+}
+INSTRUCTION (l_mulx) {
+  orreg_t   temp0, temp1, temp2;
+  LONGEST   ltemp0, ltemp1, ltemp2;
+  ULONGEST  ultemp0, ultemp1, ultemp2;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+
+  /* Args in 32-bit */
+  temp2 = (orreg_t) PARAM2;
+  temp1 = (orreg_t) PARAM1;
+
+  /* Compute initially in 64-bit */
+  ltemp1 = (LONGEST) temp1;
+  ltemp2 = (LONGEST) temp2;
+  ltemp0 = ltemp1 * ltemp2;
+
+  temp0  = (orreg_t) (ltemp0  & 0xffffffffLL);
+  SET_PARAM0 (temp0);
+
+  /* We have 2's complement overflow, if the result is less than the smallest
+     possible 32-bit negative number, or greater than the largest possible
+     32-bit positive number. */
+  if ((ltemp0 < (LONGEST) INT32_MIN) || (ltemp0 > (LONGEST) INT32_MAX))
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_OV;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV;
+    }
+
+  /* We have 1's complement overflow, if, as an unsigned operation, the result
+     is greater than the largest possible 32-bit unsigned number. This is
+     probably quicker than unpicking the bits of the signed result. */
+  ultemp1 = (ULONGEST) temp1 & 0xffffffffULL;
+  ultemp2 = (ULONGEST) temp2 & 0xffffffffULL;
+  ultemp0 = ultemp1 * ultemp2;
+
+  if (ultemp0 > (ULONGEST) UINT32_MAX)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_OV)  == SPR_SR_OV))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+}
+INSTRUCTION (l_divx) {
+  orreg_t  temp3, temp2, temp1;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+
+  temp3 = (orreg_t) PARAM2;
+  temp2 = (orreg_t) PARAM1;
+
+ /* Check for divide by zero (sets carry) */
+  if (0 == temp3)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      temp1 = temp2 / temp3;
+      SET_PARAM0(temp1);
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV; /* Never set */
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_CY)  == SPR_SR_CY))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+}
+INSTRUCTION (l_addix) {
+  orreg_t temp1, temp2, temp3;
+  int8_t temp4;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03ffffff
+
+  /* decrypt registers a, b, imm c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = (insn ^ puf_key) & 0xffff;
+  /* sign extend */
+  if (c & 0x00008000) c |= 0xffff8000;
+
+#undef PUF_KEY_MASK
+
+  temp2 = (orreg_t)PARAM2;
+  temp3 = (orreg_t)PARAM1;
+  temp1 = temp2 + temp3;
+  SET_PARAM0 (temp1);
+
+  /* Set overflow if two negative values gave a positive sum, or if two
+     positive values gave a negative sum. Otherwise clear it */
+  if ((((long int) temp2 <  0) &&
+       ((long int) temp3 <  0) &&
+       ((long int) temp1 >= 0)) ||
+      (((long int) temp2 >= 0) &&
+       ((long int) temp3 >= 0) &&
+       ((long int) temp1 <  0)))
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_OV;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV;
+    }
+
+  /* Set the carry flag if (as unsigned values) the result is smaller than
+     either operand (if it smaller than one, it will be smaller than both, so
+     we need only test one). */
+  if ((uorreg_t) temp1 < (uorreg_t) temp2)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_OV)  == SPR_SR_OV))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+
+  temp4 = temp1;
+  if (temp4 == temp1)
+    or1k_mstats.byteadd++;
+
+}
+INSTRUCTION (l_mulix) {
+  orreg_t   temp0, temp1, temp2;
+  LONGEST   ltemp0, ltemp1, ltemp2;
+  ULONGEST  ultemp0, ultemp1, ultemp2;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03ffffff
+
+  /* decrypt registers a, b, imm c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = (insn ^ puf_key) & 0xffff;
+  /* sign extend */
+  if (c & 0x00008000) c |= 0xffff8000;
+
+#undef PUF_KEY_MASK
+
+  /* Args in 32-bit */
+  temp2 = (orreg_t) PARAM2;
+  temp1 = (orreg_t) PARAM1;
+
+  /* Compute initially in 64-bit */
+  ltemp1 = (LONGEST) temp1;
+  ltemp2 = (LONGEST) temp2;
+  ltemp0 = ltemp1 * ltemp2;
+
+  temp0  = (orreg_t) (ltemp0  & 0xffffffffLL);
+  SET_PARAM0 (temp0);
+
+  /* We have 2's complement overflow, if the result is less than the smallest
+     possible 32-bit negative number, or greater than the largest possible
+     32-bit positive number. */
+  if ((ltemp0 < (LONGEST) INT32_MIN) || (ltemp0 > (LONGEST) INT32_MAX))
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_OV;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_OV;
+    }
+
+  /* We have 1's complement overflow, if, as an unsigned operation, the result
+     is greater than the largest possible 32-bit unsigned number. This is
+     probably quicker than unpicking the bits of the signed result. */
+  ultemp1 = (ULONGEST) temp1 & 0xffffffffULL;
+  ultemp2 = (ULONGEST) temp2 & 0xffffffffULL;
+  ultemp0 = ultemp1 * ultemp2;
+
+  if (ultemp0 > (ULONGEST) UINT32_MAX)
+    {
+      cpu_state.sprs[SPR_SR] |= SPR_SR_CY;
+    }
+  else
+    {
+      cpu_state.sprs[SPR_SR] &= ~SPR_SR_CY;
+    }
+
+  /* Trigger a range exception if the overflow flag is set and the SR[OVE] bit
+     is set. */
+  if (((cpu_state.sprs[SPR_SR] & SPR_SR_OVE) == SPR_SR_OVE) &&
+      ((cpu_state.sprs[SPR_SR] & SPR_SR_OV)  == SPR_SR_OV))
+    {
+      except_handle (EXCEPT_RANGE, cpu_state.pc);
+    }
+}
 /******* Custom instructions *******/
 INSTRUCTION (l_cust1) {
   /*int destr = current->insn >> 21;
