@@ -10,6 +10,11 @@ config.status
 autom4te.cache
 stamp-vti
 version.texi
+execgen.c
+generate
+sim
+profile
+mprofile
 *.o
 *.lo
 *.la
