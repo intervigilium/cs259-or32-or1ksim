@@ -530,6 +530,12 @@ CONST struct or32_opcode or1ksim_or32_opcodes[] = {
    EF (l_mulx), OR32_W_FLAG, it_arith},
   {"l.divx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x3",
    EF (l_divx), OR32_W_FLAG, it_arith},
+  {"l.andx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x4",
+   EF (l_andx), OR32_W_FLAG, it_arith},
+  {"l.orx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x5",
+   EF (l_orx), OR32_W_FLAG, it_arith},
+  {"l.xorx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x6",
+   EF (l_xorx), OR32_W_FLAG, it_arith},
 
   {"lf.addx.s", "rD,rA,rB", "11 0xB  DDDDD AAAAA BBBB B--- 0x0 0x0",
    EF (lf_addx_s), 0, it_float},

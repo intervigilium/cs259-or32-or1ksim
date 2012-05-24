@@ -1147,6 +1147,55 @@ INSTRUCTION (l_divx) {
       except_handle (EXCEPT_RANGE, cpu_state.pc);
     }
 }
+INSTRUCTION (l_andx) {
+  uorreg_t temp1;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+  temp1 = PARAM1 & PARAM2;
+  SET_PARAM0(temp1);
+}
+INSTRUCTION (l_orx) {
+  uorreg_t temp1;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+  temp1 = PARAM1 | PARAM2;
+  SET_PARAM0(temp1);
+}
+INSTRUCTION (l_xorx) {
+  /* The argument is now specified as unsigned, but historically OR1K has
+     always treated the argument as signed (so l.xori rD,rA,-1 can be used in
+     the absence of l.not). Use this as the default behavior. This is
+     controlled from or32.c. */
+  uorreg_t temp1;
+  uint32_t puf_key;
+#define PUF_KEY_MASK 0x03fffff0
+
+  /* decrypt registers a, b, c */
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+
+#undef PUF_KEY_MASK
+  temp1 = PARAM1 ^ PARAM2;
+  SET_PARAM0(temp1);
+}
 INSTRUCTION (l_addix) {
   orreg_t temp1, temp2, temp3;
   int8_t temp4;
