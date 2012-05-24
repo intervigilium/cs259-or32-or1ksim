@@ -531,6 +531,15 @@ CONST struct or32_opcode or1ksim_or32_opcodes[] = {
   {"l.divx", "rD,rA,rB", "11 0xA  DDDDD AAAAA BBBB B-00 ---- 0x3",
    EF (l_divx), OR32_W_FLAG, it_arith},
 
+  {"lf.addx.s", "rD,rA,rB", "11 0xB  DDDDD AAAAA BBBB B--- 0x0 0x0",
+   EF (lf_addx_s), 0, it_float},
+  {"lf.subx.s", "rD,rA,rB", "11 0xB  DDDDD AAAAA BBBB B--- 0x0 0x1",
+   EF (lf_subx_s), 0, it_float},
+  {"lf.mulx.s", "rD,rA,rB", "11 0xB  DDDDD AAAAA BBBB B--- 0x0 0x2",
+   EF (lf_mulx_s), 0, it_float},
+  {"lf.divx.s", "rD,rA,rB", "11 0xB  DDDDD AAAAA BBBB B--- 0x0 0x3",
+   EF (lf_divx_s), 0, it_float},
+
   {"l.addix", "rD,rA,I", "11 0xC  DDDDD AAAAA IIII IIII IIII IIII",
    EF (l_addix), OR32_W_FLAG, it_arith},
   {"l.mulix", "rD,rA,I", "11 0xD  DDDDD AAAAA IIII IIII IIII IIII",

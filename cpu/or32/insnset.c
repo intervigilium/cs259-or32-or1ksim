@@ -1274,6 +1274,62 @@ INSTRUCTION (l_mulix) {
       except_handle (EXCEPT_RANGE, cpu_state.pc);
     }
 }
+INSTRUCTION (lf_addx_s) {
+  uint32_t puf_key;
+  if (config.cpu.hardfloat) {
+#define PUF_KEY_MASK 0x03fff00
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+#undef PUF_KEY_MASK
+  float_set_rm();
+  SET_PARAM0(float32_add((unsigned int)PARAM1,(unsigned int)PARAM2));
+  float_set_flags();
+  } else l_invalid();
+}
+INSTRUCTION (lf_subx_s) {
+  uint32_t puf_key;
+  if (config.cpu.hardfloat) {
+#define PUF_KEY_MASK 0x03fff00
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+#undef PUF_KEY_MASK
+  float_set_rm();
+  SET_PARAM0(float32_sub((unsigned int)PARAM1,(unsigned int)PARAM2));
+  float_set_flags();
+  } else l_invalid();
+}
+INSTRUCTION (lf_mulx_s) {
+  uint32_t puf_key;
+  if (config.cpu.hardfloat) {
+#define PUF_KEY_MASK 0x03fff00
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+#undef PUF_KEY_MASK
+  float_set_rm();
+  SET_PARAM0(float32_mul((unsigned int)PARAM1,(unsigned int)PARAM2));
+  float_set_flags();
+  } else l_invalid();
+}
+INSTRUCTION (lf_divx_s) {
+  uint32_t puf_key;
+  if (config.cpu.hardfloat) {
+#define PUF_KEY_MASK 0x03fff00
+  puf_key = config.cpu.puf_key & PUF_KEY_MASK;
+  a = ((insn ^ puf_key) >> 21) & 0x1f;
+  b = ((insn ^ puf_key) >> 16) & 0x1f;
+  c = ((insn ^ puf_key) >> 11) & 0x1f;
+#undef PUF_KEY_MASK
+  float_set_rm();
+  SET_PARAM0(float32_div((unsigned int)PARAM1,(unsigned int)PARAM2));
+  float_set_flags();
+  } else l_invalid();
+}
 /******* Custom instructions *******/
 INSTRUCTION (l_cust1) {
   /*int destr = current->insn >> 21;
